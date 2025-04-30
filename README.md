@@ -1,5 +1,3 @@
-# sqlpaygo.ps1
-
 ## Overview
 
 `sqlpaygo.ps1` is a PowerShell script designed to automate the process of updating the license type of all Arc-enabled SQL Server instances in your Azure subscription to Pay-As-You-Go (PAYG). The script ensures that only eligible SQL Server editions (Standard or Enterprise) are updated, and provides interactive or automatic approval options.
