@@ -1,6 +1,20 @@
 param(
-    [switch]$AutoApprove
+    [switch]$AutoApprove,
+    [string]$LicenseType
 )
+
+# Always prompt for license type, ignore parameter
+$licenseTypePrompt = "Select the license type to apply:`n1. PAYG`n2. License with Software Assurance`n3. License Only"
+$licenseTypeSelection = Read-Host $licenseTypePrompt
+switch ($licenseTypeSelection) {
+    '1' { $selectedLicenseType = 'PAYG' }
+    '2' { $selectedLicenseType = 'LicenseWithSA' }
+    '3' { $selectedLicenseType = 'LicenseOnly' }
+    default {
+        Write-Error 'Invalid selection. Exiting.'
+        exit 1
+    }
+}
 
 # Ensure Azure CLI is installed
 if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
@@ -41,6 +55,10 @@ if (-not $servers) {
     exit 0
 }
 
+# Define edition sets for each license type
+$paygoOrSAEditions = @('Standard', 'Enterprise')
+$licenseOnlyEditions = @('Evaluation', 'Developer', 'Express')
+
 foreach ($server in $servers) {
     $name = $server.name
     $rg = $server.rg
@@ -48,19 +66,32 @@ foreach ($server in $servers) {
     $resource = az resource show --name $name --resource-group $rg --resource-type Microsoft.AzureArcData/sqlServerInstances -o json | ConvertFrom-Json
     $edition = $resource.properties.edition
     Write-Host "Found: $name in resource group $rg (Edition: $edition)"
-    if ($edition -notin @('Standard', 'Enterprise')) {
-        Write-Host "Skipping ${name}: Edition is not Standard or Enterprise."
+
+    $eligible = $false
+    switch ($selectedLicenseType) {
+        'PAYG' {
+            if ($edition -in $paygoOrSAEditions) { $eligible = $true }
+        }
+        'LicenseWithSA' {
+            if ($edition -in $paygoOrSAEditions) { $eligible = $true }
+        }
+        'LicenseOnly' {
+            if ($edition -in $licenseOnlyEditions) { $eligible = $true }
+        }
+    }
+    if (-not $eligible) {
+        Write-Host "Skipping ${name}: Edition is not eligible for $selectedLicenseType."
         continue
     }
     if (-not $AutoApprove) {
-        $confirm = Read-Host "Change license type to PAYG for $name in $rg (Edition: $edition)? (y/n)"
+        $confirm = Read-Host "Change license type to $selectedLicenseType for $name in $rg (Edition: $edition)? (y/n)"
         if ($confirm -ne 'y') {
             Write-Host "Skipping $name."
             continue
         }
     }
-    Write-Host "Updating license type to PAYG for $name in $rg..."
-    az resource update --ids $(az resource show --name $name --resource-group $rg --resource-type Microsoft.AzureArcData/sqlServerInstances --query id -o tsv) --set properties.licenseType=PAYG
+    Write-Host "Updating license type to $selectedLicenseType for $name in $rg..."
+    az resource update --ids $(az resource show --name $name --resource-group $rg --resource-type Microsoft.AzureArcData/sqlServerInstances --query id -o tsv) --set properties.licenseType=$selectedLicenseType
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Successfully updated $name."
     } else {
