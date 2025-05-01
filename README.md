@@ -18,7 +18,11 @@
 - Windows PowerShell or PowerShell Core
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) installed and available in your PATH
 - Azure CLI 'arcdata' extension (the script will prompt to install if missing)
-- Sufficient permissions to list and update Azure Arc-enabled SQL Server resources
+- **Azure permissions:**
+  - To list and update Azure Arc-enabled SQL Server resources, you need the following Azure RBAC roles:
+    - **Reader** role on the relevant resource group or subscription to list resources
+    - **Contributor** or **SQL Server Contributor** role on the relevant resource group or subscription to update license types
+  - For more details, see the official documentation on [Azure built-in roles](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles) and [Azure Arc-enabled SQL Server permissions](https://learn.microsoft.com/en-us/azure/azure-arc/data/azure-arc-sql-server-security#required-permissions)
 
 ## Usage
 
