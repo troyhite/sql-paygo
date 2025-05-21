@@ -1,9 +1,9 @@
 
-# Update-ArcSqlLicenseType.ps1
+# Update-SqlLicenseType.ps1
 
 ## Overview
 
-`Update-ArcSqlLicenseType.ps1` is a PowerShell script designed to automate the process of updating the license type for **all SQL Server resources in Azure**. This includes:
+`Update-SqlLicenseType.ps1` is a PowerShell script designed to automate the process of updating the license type for **all SQL Server resources in Azure**. This includes:
 
 - Arc-enabled SQL Server instances
 - SQL Server on Azure VMs (IaaS)
@@ -43,7 +43,7 @@ The script supports all license type configurations: Pay-As-You-Go (PAYG), Licen
 By default, the script will prompt you to select the license type and for confirmation before updating each eligible SQL Server resource:
 
 ```powershell
-./Update-ArcSqlLicenseType.ps1
+./Update-SqlLicenseType.ps1
 ```
 
 ### Automatic Approval
@@ -51,7 +51,7 @@ By default, the script will prompt you to select the license type and for confir
 To automatically approve all updates without prompting for each instance, use the `-AutoApprove` switch:
 
 ```powershell
-./Update-ArcSqlLicenseType.ps1 -AutoApprove
+./Update-SqlLicenseType.ps1 -AutoApprove
 ```
 
 ## What the Script Does
