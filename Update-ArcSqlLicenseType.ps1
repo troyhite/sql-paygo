@@ -150,7 +150,7 @@ if ($sqlServers) {
                 'LicenseOnly' { $targetLicense = 'BasePrice'; $eligible = $true } # No direct mapping, treat as BasePrice
             }
             if (-not $eligible) {
-                Write-Host "[PaaS-DB] Skipping $dbName: Not eligible for $selectedLicenseType."
+                Write-Host ("[PaaS-DB] Skipping {0}: Not eligible for {1}." -f $dbName, $selectedLicenseType)
                 continue
             }
             if (-not $AutoApprove) {
@@ -190,7 +190,7 @@ if ($mis) {
             'LicenseOnly' { $targetLicense = 'BasePrice'; $eligible = $true } # No direct mapping, treat as BasePrice
         }
         if (-not $eligible) {
-            Write-Host "[PaaS-MI] Skipping $miName: Not eligible for $selectedLicenseType."
+            Write-Host ("[PaaS-MI] Skipping {0}: Not eligible for {1}." -f $miName, $selectedLicenseType)
             continue
         }
         if (-not $AutoApprove) {
