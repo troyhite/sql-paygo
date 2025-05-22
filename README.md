@@ -23,6 +23,9 @@ The script supports all license type configurations: Pay-As-You-Go (PAYG), Licen
 - Prompts for confirmation before updating (unless auto-approve is enabled)
 - Updates the license type for each eligible instance, VM, or database
 - Provides clear status messages for each operation
+
+## Reports
+
 - **After running in PAYG mode, generates a report confirming that Software Assurance is OFF for all SQL resources, and warns if any are still enabled**
 - **Logs and reports any unhandled SQL Server editions encountered during execution, grouped by resource type**
 
