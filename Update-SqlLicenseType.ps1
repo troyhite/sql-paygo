@@ -47,9 +47,16 @@ if (-not $arcdataExt) {
 }
 
 
+
 # Define edition sets for each license type
 $paygoOrSAEditions = @('Standard', 'Enterprise')
 $licenseOnlyEditions = @('Evaluation', 'Developer', 'Express')
+
+# Track unhandled editions
+$unhandledArcEditions = @{}
+$unhandledVmEditions = @{}
+$unhandledPaasDbEditions = @{}
+$unhandledMiEditions = @{}
 
 # --- Arc-enabled SQL Server Instances ---
 Write-Host 'Fetching Arc-enabled SQL Server instances...'
@@ -66,6 +73,10 @@ if ($arcServers) {
             'PAYG' { if ($edition -in $paygoOrSAEditions) { $eligible = $true } }
             'LicenseWithSA' { if ($edition -in $paygoOrSAEditions) { $eligible = $true } }
             'LicenseOnly' { if ($edition -in $licenseOnlyEditions) { $eligible = $true } }
+        }
+        if (($edition -notin $paygoOrSAEditions) -and ($edition -notin $licenseOnlyEditions)) {
+            if (-not $unhandledArcEditions.ContainsKey($edition)) { $unhandledArcEditions[$edition] = @() }
+            $unhandledArcEditions[$edition] += "[Arc] $name in $rg"
         }
         if (-not $eligible) {
             Write-Host "[Arc] Skipping ${name}: Edition is not eligible for $selectedLicenseType."
@@ -104,6 +115,10 @@ if ($sqlVms) {
             'PAYG' { if ($edition -in $paygoOrSAEditions) { $eligible = $true } }
             'LicenseWithSA' { if ($edition -in $paygoOrSAEditions) { $eligible = $true } }
             'LicenseOnly' { if ($edition -in $licenseOnlyEditions) { $eligible = $true } }
+        }
+        if (($edition -notin $paygoOrSAEditions) -and ($edition -notin $licenseOnlyEditions)) {
+            if (-not $unhandledVmEditions.ContainsKey($edition)) { $unhandledVmEditions[$edition] = @() }
+            $unhandledVmEditions[$edition] += "[VM] $name in $rg"
         }
         if (-not $eligible) {
             Write-Host "[VM] Skipping ${name}: Edition is not eligible for $selectedLicenseType."
@@ -149,6 +164,12 @@ if ($sqlServers) {
                 'LicenseWithSA' { $targetLicense = 'BasePrice'; $eligible = $true }
                 'LicenseOnly' { $targetLicense = 'BasePrice'; $eligible = $true } # No direct mapping, treat as BasePrice
             }
+            # Log unhandled editions for PaaS DB
+            $knownPaasDbEditions = @('Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale')
+            if ($edition -notin $knownPaasDbEditions) {
+                if (-not $unhandledPaasDbEditions.ContainsKey($edition)) { $unhandledPaasDbEditions[$edition] = @() }
+                $unhandledPaasDbEditions[$edition] += "[PaaS-DB] $dbName on $serverName"
+            }
             if (-not $eligible) {
                 Write-Host ("[PaaS-DB] Skipping {0}: Not eligible for {1}." -f $dbName, $selectedLicenseType)
                 continue
@@ -188,6 +209,12 @@ if ($mis) {
             'PAYG' { $targetLicense = 'LicenseIncluded'; $eligible = $true }
             'LicenseWithSA' { $targetLicense = 'BasePrice'; $eligible = $true }
             'LicenseOnly' { $targetLicense = 'BasePrice'; $eligible = $true } # No direct mapping, treat as BasePrice
+        }
+        # Log unhandled editions for MI
+        $knownMiEditions = @('GeneralPurpose', 'BusinessCritical', 'Hyperscale')
+        if ($edition -notin $knownMiEditions) {
+            if (-not $unhandledMiEditions.ContainsKey($edition)) { $unhandledMiEditions[$edition] = @() }
+            $unhandledMiEditions[$edition] += "[PaaS-MI] $miName"
         }
         if (-not $eligible) {
             Write-Host ("[PaaS-MI] Skipping {0}: Not eligible for {1}." -f $miName, $selectedLicenseType)
@@ -284,6 +311,45 @@ if ($selectedLicenseType -eq 'PAYG') {
         Write-Host 'WARNING: The following SQL resources still have Software Assurance enabled:'
         $arcSaIssues + $vmSaIssues + $paasSaIssues + $miSaIssues | ForEach-Object { Write-Host $_ }
     }
+}
+
+
+# --- Unhandled Editions Report ---
+$anyUnhandled = $false
+if ($unhandledArcEditions.Count -gt 0) {
+    $anyUnhandled = $true
+    Write-Host "\n[Report] Unhandled Arc-enabled SQL Server editions detected:"
+    foreach ($edition in $unhandledArcEditions.Keys) {
+        Write-Host ("  Edition: {0}" -f $edition)
+        $unhandledArcEditions[$edition] | ForEach-Object { Write-Host ("    - {0}" -f $_) }
+    }
+}
+if ($unhandledVmEditions.Count -gt 0) {
+    $anyUnhandled = $true
+    Write-Host "\n[Report] Unhandled SQL VM editions detected:"
+    foreach ($edition in $unhandledVmEditions.Keys) {
+        Write-Host ("  Edition: {0}" -f $edition)
+        $unhandledVmEditions[$edition] | ForEach-Object { Write-Host ("    - {0}" -f $_) }
+    }
+}
+if ($unhandledPaasDbEditions.Count -gt 0) {
+    $anyUnhandled = $true
+    Write-Host "\n[Report] Unhandled Azure SQL Database (PaaS) editions detected:"
+    foreach ($edition in $unhandledPaasDbEditions.Keys) {
+        Write-Host ("  Edition: {0}" -f $edition)
+        $unhandledPaasDbEditions[$edition] | ForEach-Object { Write-Host ("    - {0}" -f $_) }
+    }
+}
+if ($unhandledMiEditions.Count -gt 0) {
+    $anyUnhandled = $true
+    Write-Host "\n[Report] Unhandled Azure SQL Managed Instance editions detected:"
+    foreach ($edition in $unhandledMiEditions.Keys) {
+        Write-Host ("  Edition: {0}" -f $edition)
+        $unhandledMiEditions[$edition] | ForEach-Object { Write-Host ("    - {0}" -f $_) }
+    }
+}
+if (-not $anyUnhandled) {
+    Write-Host '\n[Report] No unhandled SQL Server editions detected during this run.'
 }
 
 Write-Host 'Done.'

@@ -24,6 +24,7 @@ The script supports all license type configurations: Pay-As-You-Go (PAYG), Licen
 - Updates the license type for each eligible instance, VM, or database
 - Provides clear status messages for each operation
 - **After running in PAYG mode, generates a report confirming that Software Assurance is OFF for all SQL resources, and warns if any are still enabled**
+- **Logs and reports any unhandled SQL Server editions encountered during execution, grouped by resource type**
 
 ## Prerequisites
 
@@ -68,6 +69,8 @@ To automatically approve all updates without prompting for each instance, use th
     - Reports success or failure for each update.
 7. **If PAYG is selected, runs a post-update report to confirm that Software Assurance is OFF for all SQL resources, and warns if any are still enabled.**
 
+8. **Logs and reports any unhandled SQL Server editions encountered during execution, grouped by resource type. At the end of the run, a summary report lists any editions that were not recognized or handled by the script for Arc-enabled SQL, SQL VMs, Azure SQL Databases, or Managed Instances.**
+
 ## Example Output
 
 ```text
@@ -94,6 +97,13 @@ Fetching Azure SQL Managed Instances...
 [PaaS-MI] Successfully updated sqlmi1.
 --- Post-Update Report: Confirming Software Assurance (SA) is OFF for all SQL resources ---
 All SQL resources are confirmed to have Software Assurance OFF (no LicenseWithSA/BasePrice detected).
+\n[Report] Unhandled Arc-enabled SQL Server editions detected:
+  Edition: Web
+    - [Arc] sqlserver2 in rg-demo
+[Report] Unhandled SQL VM editions detected:
+  Edition: Web
+    - [VM] sqlvm2 in rg-demo
+[Report] No unhandled SQL Server editions detected during this run.
 Done.
 ```
 
@@ -102,6 +112,7 @@ Done.
 - The script will skip any SQL Server resources that are not eligible for the selected license type.
 - If no eligible SQL Server resources are found, the script will exit gracefully.
 - When running in PAYG mode, a post-update report will confirm that Software Assurance is OFF for all SQL resources, and warn if any are still enabled.
+- The script logs and reports any unhandled SQL Server editions (such as Web or unknown editions) for all resource types. These are summarized at the end of the run for review and troubleshooting.
 
 ## License
 This script is provided as-is, without warranty. Use at your own risk.
